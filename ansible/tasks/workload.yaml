@@ -1,0 +1,30 @@
+- name: Create StorageClass for EBS CSI Driver
+  kubernetes.core.k8s:
+    definition:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: benchmark-deployment
+        namespace: default
+      spec:
+        replicas: 5
+        selector:
+          matchLabels:
+            app: benchmark
+        template:
+          metadata:
+            labels:
+              app: benchmark
+          spec:
+            containers:
+            - name: benchmark-container
+              image: severalnines/sysbench
+              command: ["/bin/sh", "-c"]
+              args: ["sysbench cpu --threads=2 run; sysbench memory --threads=2 run"]
+              resources:
+                requests:
+                  memory: "512Mi"
+                  cpu: "500m"
+                limits:
+                  memory: "1Gi"
+                  cpu: "1"

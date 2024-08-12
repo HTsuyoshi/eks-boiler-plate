@@ -1,0 +1,16 @@
+---
+- name: Add metrics server helm repository
+  kubernetes.core.helm_repository:
+    name: metrics-server
+    repo_url: '{{ kubernetes_metrics_server_helm_repository }}'
+
+- name: Install metrics server helm chart
+  kubernetes.core.helm:
+    name: '{{ metrics_server_release }}'
+    chart_ref: 'metrics-server/metrics-server'
+    chart_version: '{{ metrics_server_chart_version }}'
+    namespace: '{{ metrics_server_namespace }}'
+    values:
+      tolerations:
+        - key: CriticalAddonsOnly
+          operator: Exists

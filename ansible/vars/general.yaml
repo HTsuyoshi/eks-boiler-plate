@@ -1,0 +1,18 @@
+---
+# Argument set from ansible command
+# - vpc_id
+# - region
+# - cluster_name
+# - cluster_endpoint
+# - karpenter_role_arn
+# - karpenter_instance_profile_name
+
+ebs_csi_storage_class: 'ebs-sc'
+
+metrics_server_release: 'metrics-server'
+metrics_server_namespace: 'kube-system'
+metrics_server_chart_version: '3.12.1'
+
+karpenter_release: 'karpenter'
+karpenter_namespace: 'karpenter'
+karpenter_chart_version: '0.37.0'

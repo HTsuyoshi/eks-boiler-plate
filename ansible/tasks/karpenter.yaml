@@ -1,0 +1,110 @@
+---
+- name: Tag Karpenter Security Group
+  ansible.builtin.shell:
+    cmd: |
+      aws ec2 create-tags \
+      --tags 'Key=karpenter.sh/discovery,Value={{ cluster_name }}' \
+      --resources "$(aws eks describe-cluster --name '{{ cluster_name }}' --query 'cluster.resourcesVpcConfig.clusterSecurityGroupId' --output text)"
+    executable: '/bin/bash'
+  changed_when: false
+
+- name: Install karpenter helm chart
+  kubernetes.core.helm:
+    name: '{{ karpenter_release }}'
+    chart_ref: '{{ karpenter_chart_ref }}'
+    chart_version: '{{ karpenter_chart_version }}'
+    namespace: '{{ karpenter_namespace }}'
+    create_namespace: true
+    wait: true
+    timeout: 600s
+    values:
+      logLevel: debug
+      webhook:
+        enabled: true
+      controller:
+        requests:
+          cpu: 1
+          memory: 1Gi
+        limits:
+          cpu: 1
+          memory: 1Gi
+      settings:
+        clusterName: '{{ cluster_name }}'
+        clusterEndpoint: '{{ cluster_endpoint }}'
+      serviceAccount:
+        name: 'karpenter'
+        create: true
+        annotations:
+          eks.amazonaws.com/role-arn: '{{ karpenter_role_arn }}'
+
+- name: Install EC2NodeClasses CRD
+  kubernetes.core.k8s:
+    state: present
+    src: '{{ karpenter_ec2nodeclasses_crd }}'
+
+- name: Install NodePools CRD
+  kubernetes.core.k8s:
+    state: present
+    src: '{{ karpenter_nodepool_crd }}'
+
+- name: Install NodeClaims CRD
+  kubernetes.core.k8s:
+    state: present
+    src: '{{ karpenter_nodeclaims_crd }}'
+
+- name: Create Karpenter EC2NodeClass
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: karpenter.k8s.aws/v1beta1
+      kind: EC2NodeClass
+      metadata:
+        name: default
+      spec:
+        amiFamily: AL2
+        amiSelectorTerms:
+          - name: 'amazon-eks-node-1.30-v20240729'
+        role: 'CustomerServiceRoleForKarpenterNode'
+        subnetSelectorTerms:
+          - tags:
+              karpenter.sh/discovery: '{{ cluster_name }}'
+        securityGroupSelectorTerms:
+          - tags:
+              karpenter.sh/discovery: '{{ cluster_name }}'
+        tags:
+          Name: 'karpenter-ec2nodeclass'
+
+- name: Create general purpose NodePool
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: karpenter.sh/v1beta1
+      kind: NodePool
+      metadata:
+        name: general-purpose
+      spec:
+        template:
+          spec:
+            requirements:
+              - key: kubernetes.io/arch
+                operator: In
+                values: ['amd64']
+              - key: kubernetes.io/os
+                operator: In
+                values: ['linux']
+              - key: 'node.kubernetes.io/instance-type'
+                operator: In
+                values: ['t3.medium', 't3.large']
+              - key: karpenter.sh/capacity-type
+                operator: In
+                values: ['on-demand', 'spot']
+            nodeClassRef:
+              apiVersion: karpenter.k8s.aws/v1beta1
+              kind: EC2NodeClass
+              name: default
+        limits:
+          cpu: '16'
+          memory: '32Gi'
+        disruption:
+          consolidationPolicy: WhenUnderutilized
+          expireAfter: 1h

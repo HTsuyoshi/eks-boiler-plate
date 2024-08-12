@@ -1,0 +1,14 @@
+---
+- name: Setup kubectl with eksctl
+  ansible.builtin.command: 'eksctl utils write-kubeconfig --cluster={{ cluster_name }} --region={{ region }}'
+  changed_when: false
+
+- name: Create StorageClass for EBS CSI Driver
+  kubernetes.core.k8s:
+    definition:
+      apiVersion: storage.k8s.io/v1
+      kind: StorageClass
+      metadata:
+        name: '{{ ebs_csi_storage_class }}'
+      provisioner: ebs.csi.aws.com
+      volumeBindingMode: WaitForFirstConsumer

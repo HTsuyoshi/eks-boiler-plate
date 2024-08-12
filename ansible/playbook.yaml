@@ -1,0 +1,21 @@
+---
+- name: Setup bastion
+  hosts: all
+  remote_user: ubuntu
+  become_user: root
+  become: false
+  become_method: ansible.builtin.sudo
+  vars_files:
+    - vars/endpoints.yaml
+    - vars/general.yaml
+  tasks:
+    - name: Install Dependencies
+      ansible.builtin.include_tasks: tasks/01_dependencies.yaml
+    - name: Configure EKS
+      ansible.builtin.include_tasks: tasks/02_eks.yaml
+    - name: Install Metrics Server
+      ansible.builtin.include_tasks: tasks/metrics_server.yaml
+    - name: Install and configure Karpenter
+      ansible.builtin.include_tasks: tasks/karpenter.yaml
+    - name: Install example workload
+      ansible.builtin.include_tasks: tasks/workload.yaml

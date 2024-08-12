@@ -1,0 +1,12 @@
+---
+awscli_endpoint: 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip'
+kubectl_endpoint: 'https://s3.us-west-2.amazonaws.com/amazon-eks/1.30.0/2024-05-12/bin/linux/amd64/kubectl'
+helm_version: 'helm-v3.15.2-linux-amd64.tar.gz'
+eksctl_endpoint: 'https://github.com/eksctl-io/eksctl/releases/download/v0.183.0/eksctl_Linux_amd64.tar.gz'
+eksctl_checksum_endpoint: 'https://github.com/eksctl-io/eksctl/releases/download/v0.183.0/eksctl_checksums.txt'
+
+kubernetes_metrics_server_helm_repository: 'https://kubernetes-sigs.github.io/metrics-server/'
+karpenter_chart_ref: 'oci://public.ecr.aws/karpenter/karpenter'
+karpenter_ec2nodeclasses_crd: 'https://raw.githubusercontent.com/aws/karpenter-provider-aws/release-v0.37.x/pkg/apis/crds/karpenter.k8s.aws_ec2nodeclasses.yaml'
+karpenter_nodepool_crd: 'https://raw.githubusercontent.com/aws/karpenter-provider-aws/release-v0.37.x/pkg/apis/crds/karpenter.sh_nodepools.yaml'
+karpenter_nodeclaims_crd: 'https://raw.githubusercontent.com/aws/karpenter-provider-aws/release-v0.37.x/pkg/apis/crds/karpenter.sh_nodeclaims.yaml'

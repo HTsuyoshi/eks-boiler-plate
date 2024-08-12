@@ -1,0 +1,101 @@
+---
+- name: Install ansible dependencies
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+    name:
+      - 'unzip=6.0-28ubuntu4'
+    state: present
+
+- name: Download and uncompress AWS CLI
+  become: true
+  ansible.builtin.unarchive:
+    src: '{{ awscli_endpoint }}'
+    dest: '/tmp'
+    mode: '0755'
+    remote_src: true
+    validate_certs: false
+
+- name: Install AWS CLI
+  become: true
+  ansible.builtin.command: '/tmp/aws/install -i /usr/bin'
+  changed_when: false
+
+- name: Check and download kubectl
+  become: true
+  ansible.builtin.get_url:
+    url: '{{ kubectl_endpoint }}'
+    dest: '/usr/bin'
+    mode: '0755'
+    checksum: 'sha256:{{ kubectl_endpoint }}.sha256'
+
+- name: Fetch helm SHA256 checksum
+  ansible.builtin.uri:
+    url: 'https://get.helm.sh/{{ helm_version }}.sha256'
+    return_content: true
+  register: helm_sha256
+
+- name: Check and download helm
+  ansible.builtin.get_url:
+    url: 'https://get.helm.sh/{{ helm_version }}'
+    dest: '/tmp/{{ helm_version }}'
+    mode: '0755'
+    checksum: 'sha256:{{ helm_sha256.content }}'
+
+- name: Uncompress helm
+  become: true
+  ansible.builtin.unarchive:
+    src: '/tmp/{{ helm_version }}'
+    dest: '/tmp'
+    mode: '0755'
+    remote_src: true
+
+- name: Copy helm to path
+  become: true
+  ansible.builtin.copy:
+    src: '/tmp/linux-amd64/helm'
+    dest: '/usr/bin/helm'
+    mode: '0755'
+    remote_src: true
+
+- name: Fetch eksctl SHA256 checksum
+  ansible.builtin.uri:
+    url: '{{ eksctl_checksum_endpoint }}'
+    return_content: true
+  register: eksctl_sha256
+
+- name: Check and download eksctl
+  ansible.builtin.get_url:
+    url: '{{ eksctl_endpoint }}'
+    dest: '/tmp/eksctl_Linux_amd64.tar.gz'
+    mode: '0755'
+    checksum: 'sha256:{{ eksctl_sha256.content | regex_search("^.*eksctl_Linux_amd64.*$", multiline=True) | regex_replace(" .*$", "") }}'
+
+- name: Uncompress eksctl to path
+  become: true
+  ansible.builtin.unarchive:
+    src: '/tmp/eksctl_Linux_amd64.tar.gz'
+    dest: '/usr/bin'
+    mode: '0755'
+    remote_src: true
+
+- name: Remove Installation files
+  become: true
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  with_items:
+    - '/tmp/helm-v3.15.2-linux-amd64.tar.gz'
+    - '/tmp/linux-amd64'
+    - '/tmp/eksctl_Linux_amd64.tar.gz'
+    - '/tmp/aws'
+
+- name: Install pip dependencies
+  become: true
+  ansible.builtin.apt:
+    state: present
+    name:
+      - 'python3-pip=24.0+dfsg-1ubuntu1'
+      - 'python3-kubernetes=22.6.0-2'
+      - 'python3-yaml=6.0.1-2build2'
+      - 'python3-jsonpatch=1.32-3'
