@@ -6,6 +6,19 @@ Karpenter is running in the default 3 nodes of EKS ASG
 
 The infrastructure is created by terraform and the cluster configuration with anible.
 
+## Requisitos
+
+Binaries:
+
+- terraform:1.9.0-1
+- python3-pip:22.0.2+dfsg-1ubuntu0.4
+- ansible:10.1.0
+- ansible-core:2.17.1
+
+Ansible-galaxy modules:
+
+- kubernetes.core:v3.2.0
+
 ## Deploy
 
 Setup provider.aws in `main.tf`
@@ -13,6 +26,10 @@ Setup provider.aws in `main.tf`
 Change `bastion_config.source_cidr` to your IP in `development.tfvars`
 
 Create your own ssh key with `ssh-keygen` and set `bastion_config.public_key_path` and `bastion_config.private_key_path` in `development.tfvars`
+
+```bash
+terraform apply --auto-approve -var-file='development.tfvars' -parallelism=10
+```
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
